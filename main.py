@@ -42,7 +42,7 @@ class modelTrain():
 
         # data format and shape
         in_modals = 't'
-        data_len_idx = 8       # data length is data_len_idx*1024
+        data_len_idx = 12       # data length is data_len_idx*1024
         slice_len_idx = 6       # each slice len is 2**slice_len_idx
         downsample = 1
         train_snr= [0,32]       # train data of random SNR from Uniform[0,32] dB

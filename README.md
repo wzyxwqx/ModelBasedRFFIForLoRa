@@ -10,18 +10,12 @@ fvcore==0.1.5
 Note that environments with some pacakeges of lower versions may also work. 
 
 ## Dataset
-Here we provide codes using the datasets come from paper "Towards scalable and channel-robust radio frequency fingerprint identification for LoRa". The dataset should be palced in the folder `data/`
+Here we provide codes using the datasets come from paper "Comprehensive RF Dataset Collection and Release: A Deep Learning-Based Device Fingerprinting Use Case". The dataset should be placed in the folder `data/`.
 
 Reference of the paper:
 ```
-Shen, G., Zhang, J., Marshall, A., & Cavallaro, J. R. (2022). Towards scalable and channel-robust radio frequency fingerprint identification for LoRa. IEEE Transactions on Information Forensics and Security, 17, 774-787.
+Elmaghbub, A., & Hamdaoui, B. (2021, December). Comprehensive RF dataset collection and release: A deep learning-based device fingerprinting use case. In 2021 IEEE Globecom Workshops (GC Wkshps) (pp. 1-7). IEEE.
 ```
-Reference of the dataset:
-```  
-Guanxiong Shen, Junqing Zhang, Alan Marshall, February 3, 2022, "LoRa_RFFI_dataset", IEEE Dataport, doi: https://dx.doi.org/10.21227/qqt4-kz19.
-```
-
-With default settings, the model is trained on preambles from days 1 to 4 of the 'Outdoor' environments and tested on the 5th day.
 
 ## DL Network Hyperparameter Settings Examples
 GRNet:
