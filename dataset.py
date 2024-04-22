@@ -3,48 +3,40 @@ from torch.utils.data import Dataset
 from torch import from_numpy,stft,fft
 import numpy as np
 import h5py
-def get_10lora(h5file_path,train_path_list=[0,1,2,3,4],test_path_list=[[5,6,7,8,9]],data_shape=(1,8192,2),data_ratio=[0.8,0.1,0.1]):
-    files=['/dataset_residential.h5','/channel_problem/B.h5', '/channel_problem/B_walk.h5', '/channel_problem/C.h5', '/channel_problem/moving_office.h5','/channel_problem/D.h5', '/channel_problem/E.h5', '/channel_problem/F.h5','/channel_problem/F_walk.h5','/channel_problem/moving_meeting_room.h5']
+
+def get_rffplora(h5file_path,group='Outdoor',train_path_list=['1','2','3','4'],test_path_list=['5'],data_shape=(1,12288,2),data_ratio=[0.8,0.1,0.1]):#(1,12288,2)
+    # group in ['Indoor', 'Outdoor']
+    f = h5py.File(h5file_path, "r")
     train_val_num = 0
-    test_group_num=len(test_path_list)
-    test_num = np.zeros(test_group_num,dtype=np.int64)
-    print(f'[lora] train days:{train_path_list}, test days:{test_path_list},test_group_num:{test_group_num}')
-    for path in train_path_list:
-        with h5py.File(h5file_path+files[path], "r") as f:
-            train_val_num += f['label'].shape[1]
-    for groupidx,path_group in enumerate(test_path_list):
-        for path in (path_group):
-            with h5py.File(h5file_path+files[path], "r") as f:
-                test_num[groupidx] += f['label'].shape[1]
+    test_num = 0
+    print(f'Days in {group}:{f[group].keys()}, train days:{train_path_list}, test days:{test_path_list}')
+    for path in f[group].keys():
+        if path in train_path_list:
+            train_val_num += len(f[f'{group}/{path}/Y'])
+        elif path in test_path_list:
+            test_num += len(f[f'{group}/{path}/Y'])
     print(f'[dataset] train_val_num:{train_val_num},test_num:{test_num}')
     X1=np.zeros((train_val_num,data_shape[0],data_shape[1],data_shape[2]),dtype=np.float32)
     Y1=np.zeros((train_val_num,),dtype=np.int64)
-    X2=[]
-    Y2=[]
-    for i in range(test_group_num):
-        X2.append(np.zeros((test_num[i],data_shape[0],data_shape[1],data_shape[2]),dtype=np.float32))
-        Y2.append(np.zeros((test_num[i],),dtype=np.int64))
+    X2=np.zeros((test_num,data_shape[0],data_shape[1],data_shape[2]),dtype=np.float32)
+    Y2=np.zeros((test_num,),dtype=np.int64)
     train_start,train_end=0,0
-    for path in train_path_list:
-        with h5py.File(h5file_path+files[path], "r") as f:
-            num_path =f['label'].shape[1]
-            train_end = train_end+num_path
-            xtmp = np.array(f['data']).astype(np.float32)
-            xtmp = np.concatenate((-xtmp[:,8192:].reshape((num_path,1,8192,1)),xtmp[:,:8192].reshape((num_path,1,8192,1))),axis=3)
+    test_start,test_end=0,0
+    for path in f[group].keys():
+        n = len(f[f'{group}/{path}/Y'])
+        if path in train_path_list:
+            train_end = train_end+n
+            xtmp = np.array(f[f'{group}/{path}/X'])
             X1[train_start:train_end] = xtmp
-            Y1[train_start:train_end] = np.array(f[f'label'][0,:]).astype(np.int64)
-            train_start = train_start+num_path
-    for groupidx,path_group in enumerate(test_path_list):
-        test_start,test_end=0,0
-        for path in (path_group):
-            with h5py.File(h5file_path+files[path], "r") as f:
-                num_path =f['label'].shape[1]
-                test_end = test_end+num_path
-                xtmp = np.array(f['data']).astype(np.float32)
-                xtmp = np.concatenate((-xtmp[:,8192:].reshape((num_path,1,8192,1)),xtmp[:,:8192].reshape((num_path,1,8192,1))),axis=3)
-                X2[groupidx][test_start:test_end] = xtmp
-                Y2[groupidx][test_start:test_end] = np.array(f[f'label'][0,:]).astype(np.int64)
-                test_start = test_start+num_path
+            Y1[train_start:train_end] = np.array(f[f'{group}/{path}/Y']).astype(np.int64)
+            train_start = train_start+n
+        elif path in test_path_list:
+            test_end = test_end+n
+            xtmp = np.array(f[f'{group}/{path}/X'])
+
+            X2[test_start:test_end] = xtmp
+            Y2[test_start:test_end] = np.array(f[f'{group}/{path}/Y']).astype(np.int64)
+            test_start = test_start+n
     train_val_indices = np.arange(train_val_num)
     np.random.shuffle(train_val_indices)
     train_num = int(data_ratio[0]*train_val_num)
@@ -54,11 +46,7 @@ def get_10lora(h5file_path,train_path_list=[0,1,2,3,4],test_path_list=[[5,6,7,8,
     val_indices = train_val_indices[train_num:train_num+possible_val_num]
     test_indices = train_val_indices[train_num+possible_val_num:]
     
-    X_test=[]
-    Y_test=[]
-    for i in range(test_group_num):
-        X_test.append(X2[i][:])
-        Y_test.append(Y2[i][:]-int(min(Y2[i][:])))
+    X_test2, Y_test2 = X2[:], Y2[:]-int(min(Y2[:]))
     if len(train_path_list)!=0:
         X_test1, Y_test1 = X1[test_indices], Y1[test_indices]-int(min(Y1[test_indices]))
         X_train, Y_train = X1[train_indices], Y1[train_indices]-int(min(Y1[train_indices]))
@@ -72,13 +60,14 @@ def get_10lora(h5file_path,train_path_list=[0,1,2,3,4],test_path_list=[[5,6,7,8,
     if train_path_list==test_path_list:
         X_test, Y_test = X_test1, Y_test1 
     elif len(train_path_list)==0:
-        X_test, Y_test = X_test, Y_test 
+        X_test, Y_test = X_test2, Y_test2 
     else:
-        X_test.insert(0,X_test1),Y_test.insert(0,Y_test1) 
+        X_test, Y_test = (X_test1,X_test2),(Y_test1,Y_test2) 
     print('[dataset] lenth of xtest and ytest:',len(X_test),len(Y_test))
-    return X_train, Y_train, X_val, Y_val, X_test, Y_test, 10
-def geth5datasets(h5file_path,data_ratio=[0.8,0.1,0.1],**kwargs):
-    X_train, Y_train, X_val, Y_val, X_test, Y_test, classnum = get_10lora(h5file_path,data_ratio=data_ratio)
+    return X_train, Y_train, X_val, Y_val, X_test, Y_test, 25
+
+def geth5datasets(h5file_path,wireless_channel='Outdoor',data_ratio=[0.8,0.1,0.1],train_path_list=['1','2','3','4'],test_path_list=['5'],**kwargs):
+    X_train, Y_train, X_val, Y_val, X_test, Y_test, classnum = get_rffplora(h5file_path,group=wireless_channel,train_path_list=train_path_list,test_path_list=test_path_list,data_ratio=data_ratio)
     if not train_path_list:
         train_dataset, val_dataset = None, None
     else:

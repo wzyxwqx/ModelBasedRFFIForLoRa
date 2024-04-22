@@ -38,7 +38,7 @@ class modelTrain():
         # dataset
         data_ratio = [0.8,0.1,0.1]
         current_path = os.getcwd()
-        dataset_path = current_path + '/data/'
+        dataset_path = current_path + '/data/LoRa.h5'
 
         # data format and shape
         in_modals = 't'
@@ -49,7 +49,9 @@ class modelTrain():
         test_snr_list = [-20,-15,-10,-5,0,5,10,15,20,25,30,35]
         usels = True            # use LS equalization or not
         signal_start=0          # 
-
+        train_path_list = ['1','2','3','4']
+        test_path_list = ['5']
+        wireless_channel = 'Outdoor'
         # Log settings
         self.log_freq = 5
         save_model = False      # Save the trained model or not
@@ -80,7 +82,7 @@ class modelTrain():
         f_idx = torch.cat((tensor1, tensor2), dim=0)
 
         ##### Load and init dataset #####
-        train_dataset, val_dataset, test_dataset, classnum = geth5datasets(dataset_path, data_ratio=data_ratio, in_modals=in_modals, slice_len=slice_len, downsample=downsample, data_len=data_len, da=['awgn'], start=signal_start)
+        train_dataset, val_dataset, test_dataset, classnum = geth5datasets(h5file_path=dataset_path, train_path_list=train_path_list, test_path_list=test_path_list, data_ratio=data_ratio, in_modals=in_modals, slice_len=slice_len, downsample=downsample, data_len=data_len, da=['awgn'], start=signal_start)
         train_dataset.set_out_format(snr=train_snr)#
         val_dataset.set_out_format(snr=train_snr)#
         
