@@ -1,0 +1,11 @@
+__pycache__/
+model/
+data/
+log/
+*.log
+*.ipynb
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.sh
